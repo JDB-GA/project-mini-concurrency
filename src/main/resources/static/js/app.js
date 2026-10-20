@@ -1,4 +1,4 @@
-import {applyRaises, fetchEmployees, previewRaises, rateQuery} from "./api.js";
+import {applyRaises, fetchEmployees, fetchStatus, previewRaises, rateQuery, resetData} from "./api.js";
 import {changeColumns, employeeColumns, money} from "./columns.js";
 import {renderTable} from "./table.js";
 
@@ -8,10 +8,17 @@ const body = document.getElementById("table-body");
 const message = document.getElementById("message");
 const summary = document.getElementById("summary");
 const buttons = document.querySelectorAll(".actions button");
+const dataStatus = document.getElementById("data-status");
 
 function setMessage(text, isError) {
     message.textContent = text;
     message.classList.toggle("error", Boolean(isError));
+}
+
+function showStatus(status) {
+    dataStatus.textContent = status.original ? "Original data" : "Updated data";
+    dataStatus.title = status.activeFile;
+    dataStatus.classList.toggle("updated", !status.original);
 }
 
 function showReport(report) {
@@ -37,28 +44,31 @@ async function run(action) {
 }
 
 async function loadEmployees() {
-    const employees = await fetchEmployees();
+    const [employees, status] = await Promise.all([fetchEmployees(), fetchStatus()]);
     summary.hidden = true;
+    showStatus(status);
     renderTable(head, body, employeeColumns, employees);
-    setMessage(employees.length + " employees loaded from CSV.");
+    setMessage(employees.length + " employees loaded from " + (status.original ? "the original file." : "the updated file."));
 }
 
 async function preview() {
     showReport(await previewRaises(rateQuery(form)));
-    setMessage("Preview only. The CSV file was not changed.");
+    setMessage("Preview only. Nothing was saved.");
 }
 
 async function apply() {
     const result = await applyRaises(rateQuery(form));
     showReport(result.report);
-    setMessage("Saved updated salaries to " + result.outputFile);
+    showStatus(await fetchStatus());
+    setMessage("Saved to " + result.outputFile + ". Apply again to stack raises, or reset to start over.");
 }
 
 document.getElementById("preview").addEventListener("click", () => run(preview));
 document.getElementById("apply").addEventListener("click", () => run(apply));
-document.getElementById("reset").addEventListener("click", () => {
+document.getElementById("reset").addEventListener("click", () => run(async () => {
+    await resetData();
     form.reset();
-    run(loadEmployees);
-});
+    await loadEmployees();
+}));
 
 run(loadEmployees);

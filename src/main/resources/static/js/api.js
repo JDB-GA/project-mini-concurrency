@@ -28,3 +28,11 @@ export function previewRaises(query) {
 export function applyRaises(query) {
     return request("/api/salaries/apply?" + query, {method: "POST"});
 }
+
+export function fetchStatus() {
+    return request("/api/status");
+}
+
+export function resetData() {
+    return request("/api/salaries/reset", {method: "POST"});
+}

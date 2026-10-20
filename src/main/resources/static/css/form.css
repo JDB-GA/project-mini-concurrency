@@ -65,3 +65,30 @@ button:disabled {
     color: var(--error);
 }
 
+
+.panel-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.panel-header h2 {
+    margin: 0;
+}
+
+.badge {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+}
+
+.badge.updated {
+    border-color: var(--up);
+    color: var(--up);
+}

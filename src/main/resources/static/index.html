@@ -16,7 +16,10 @@
     </header>
 
     <section class="panel">
-        <h2>Raise percentages</h2>
+        <div class="panel-header">
+            <h2>Raise percentages</h2>
+            <span id="data-status" class="badge"></span>
+        </div>
         <form id="rates">
             <label>Director %
                 <input type="number" name="director" value="5" min="0" max="100" step="0.1">
@@ -35,7 +38,7 @@
         <div class="actions">
             <button id="preview" type="button">Show before &amp; after</button>
             <button id="apply" type="button" class="secondary">Apply &amp; save CSV</button>
-            <button id="reset" type="button" class="ghost">Reset</button>
+            <button id="reset" type="button" class="ghost">Reset to original data</button>
         </div>
         <p id="message" class="message" role="status"></p>
     </section>
