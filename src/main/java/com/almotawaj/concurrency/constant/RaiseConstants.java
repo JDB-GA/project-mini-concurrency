@@ -8,6 +8,7 @@ public final class RaiseConstants {
     public static final double BONUS_MULTIPLIER = 1.5;
     public static final double NO_RAISE = 0.0;
     public static final double PERCENT = 100.0;
+    public static final double RATE_PRECISION = 10_000.0;
 
     private RaiseConstants() {
     }

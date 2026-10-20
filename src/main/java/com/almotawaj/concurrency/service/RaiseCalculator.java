@@ -23,7 +23,8 @@ public class RaiseCalculator {
             return RaiseConstants.NO_RAISE;
         }
 
-        return roleRate(employee, rules) + tenureRate(employee, rules);
+        double rate = roleRate(employee, rules) + tenureRate(employee, rules);
+        return Math.round(rate * RaiseConstants.RATE_PRECISION) / RaiseConstants.RATE_PRECISION;
     }
 
     public int yearsWorked(Employee employee) {
