@@ -109,3 +109,94 @@ Errors are returned as JSON, `{"message": "..."}`:
 | 404 | Unknown path |
 | 422 | The CSV contains an invalid row |
 | 500 | The file cannot be read or written, or processing fails |
+
+## Project structure
+
+```
+src/main/java/com/almotawaj/concurrency
+├── config        ExecutorConfig, TimeConfig
+├── constant      ErrorConstants, FileConstants, ProcessingConstants, RaiseConstants
+├── controller    SalaryController
+├── dto           RaiseRequest, ErrorResponse
+├── exception     GlobalExceptionHandler and the custom exceptions
+├── model         Employee, Role, RaiseRules, SalaryUpdate, SalaryChange, ProcessingReport, ApplyResult
+├── service       EmployeeService, RaiseCalculator, SalaryProcessor
+└── tools         CsvLines, EmployeeCsvMapper, AppLogger
+src/main/resources
+├── 19-10-2026.csv   sample data (30 employees)
+└── static           index.html, styles.css, app.js
+```
+
+## Class reference
+
+### model
+
+- **`Role`**: enum of `DIRECTOR`, `MANAGER`, `EMPLOYEE`, each holding its default raise rate.
+  - `fromCsv(String)` converts CSV text such as `Manager` into a `Role`; an unknown value throws.
+  - `toCsv()` converts back to the CSV spelling.
+- **`Employee`**: one CSV row. Every field is `final` except `salary`, which is guarded by a `ReentrantLock`.
+  - `getSalary()` reads the salary under the lock.
+  - `applyRaise(double rate)` reads the old salary, applies the raise and returns both values as a `SalaryUpdate`, all inside one locked section.
+- **`RaiseRules`**: the role rates and yearly rate used for a run. `defaults()` returns the rates from the brief; `roleRate(Role)` looks up a role's rate.
+- **`SalaryUpdate`**: the salary before and after one raise.
+- **`SalaryChange`**: one employee's result: before and after salary, rate, years worked and the worker thread name.
+- **`ProcessingReport`**: all `SalaryChange` results sorted by id, plus processed, raised and skipped counts, the total increase and the duration.
+- **`ApplyResult`**: a `ProcessingReport` plus the path of the written CSV.
+
+### tools
+
+- **`CsvLines`**: generic CSV file access.
+  - `getLines(Path)` reads a file and returns the rows after the header, each split into columns.
+  - `writeLines(Path, String[] header, List<String[]>)` writes a header and rows, creating folders as needed.
+  - `updateCell(Path, row, col, value)` changes one cell in place; row 0 is the first data row.
+  - `listFiles(Path)` lists the `.csv` files in a folder.
+- **`EmployeeCsvMapper`**: converts between CSV rows and `Employee` objects.
+  - `toEmployees(List<String[]>)` maps every row and skips blank lines.
+  - `toEmployee(String[], lineNumber)` validates and maps one row, throwing `InvalidEmployeeException` with the line number.
+  - `toRow(Employee)` maps an employee back to a CSV row.
+  - `header()` returns the CSV header.
+- **`AppLogger`**: thin wrapper around SLF4J.
+
+### service
+
+- **`RaiseCalculator`**: pure calculation, no threading.
+  - `rateFor(Employee, RaiseRules)` applies the four raise rules and returns the rate as a fraction.
+  - `yearsWorked(Employee)` counts full years between the joined date and today; it uses an injected `Clock` so tests can fix the date.
+- **`SalaryProcessor`**: the concurrent part (see the next section).
+  - `process(List<Employee>, RaiseRules)` submits one task per employee to the thread pool, waits for all of them and returns a `ProcessingReport`.
+- **`EmployeeService`**: ties file access and processing together.
+  - `loadEmployees()` reads the configured input CSV.
+  - `preview(RaiseRules)` processes a fresh copy of the employees without writing anything.
+  - `apply(RaiseRules)` processes the employees and writes `output/<input-name>-updated.csv`.
+
+### web
+
+- **`SalaryController`**: the three REST endpoints.
+- **`RaiseRequest`**: binds the optional percentage query parameters, validates them and converts them into `RaiseRules`.
+- **`GlobalExceptionHandler`**: turns every exception into a JSON `ErrorResponse` with the right status code.
+
+### config
+
+- **`ExecutorConfig`**: creates the shared fixed-size thread pool with threads named `salary-worker-N`, shut down when the application stops.
+- **`TimeConfig`**: provides the system `Clock`.
+
+## Concurrency design
+
+`SalaryProcessor.process` is where the concurrency happens. Each technique from the brief has a specific job:
+
+| Technique | Where | Why |
+|---|---|---|
+| Thread pool (`ExecutorService`) | `ExecutorConfig`, `SalaryProcessor` | A fixed pool of reusable worker threads. Each employee becomes one task, so the workload is spread across the pool instead of creating a thread per employee. |
+| `Future` | `SalaryProcessor.awaitAll` | The caller waits for every task. If one fails or the caller is interrupted, the remaining tasks are cancelled and the error is reported. |
+| `Semaphore` | `SalaryProcessor.processEmployee` | Limits how many salary updates run at the same moment (`processing.max-concurrent-updates`), the way access to a limited shared resource such as a database connection would be throttled. Permits are always released in a `finally` block. |
+| `ReentrantLock` | `Employee` | Protects the only mutable field, `salary`. Reading the old value and writing the new one happen in one locked section, so two raises on the same employee can never lose an update. |
+| `AtomicInteger` | `SalaryProcessor` | Counts raised and skipped employees from many threads without locking. |
+| `DoubleAdder` | `SalaryProcessor` | Sums the total increase from many threads; it is faster than a lock under contention. |
+| `synchronized` block | `SalaryProcessor` | Guards the shared `ArrayList` of results, which is not thread-safe by itself. |
+
+Supporting decisions:
+
+- `RaiseCalculator` has no shared state, so it can be called from every thread without synchronization.
+- All `Employee` fields except `salary` are `final`, so they are safely visible to every thread without locks.
+- Results arrive in whatever order the threads finish, so the report sorts them by id before returning them.
+- `InterruptedException` is never swallowed: the interrupt flag is restored and the error is reported.
