@@ -38,6 +38,14 @@ public final class CsvLines {
         writeAll(linesPath, lines);
     }
 
+    public static boolean deleteIfExists(Path linesPath) {
+        try {
+            return Files.deleteIfExists(linesPath);
+        } catch (IOException e) {
+            throw new LinesException(ErrorConstants.FILE_DELETE_ERROR, e);
+        }
+    }
+
     public static List<String> listFiles(Path dir) {
         if (!Files.exists(dir)) {
             return List.of();
