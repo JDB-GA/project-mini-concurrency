@@ -61,10 +61,14 @@ class RaiseCalculatorTest {
 
     @Test
     void usesCustomRules() {
-        RaiseRules custom = new RaiseRules(Map.of(Role.EMPLOYEE, new BigDecimal("0.10")), new BigDecimal("0.05"));
+        RaiseRules custom = new RaiseRules(Map.of(
+                Role.DIRECTOR, new BigDecimal("0.08"),
+                Role.MANAGER, new BigDecimal("0.04"),
+                Role.EMPLOYEE, new BigDecimal("0.10")), new BigDecimal("0.05"));
 
         assertRate("0.20", employee(Role.EMPLOYEE, TODAY.minusYears(2), 0.7), custom);
-        assertRate("0.02", employee(Role.MANAGER, TODAY, 0.7), custom);
+        assertRate("0.04", employee(Role.MANAGER, TODAY, 0.7), custom);
+        assertRate("0.08", employee(Role.DIRECTOR, TODAY, 0.7), custom);
     }
 
     @Test

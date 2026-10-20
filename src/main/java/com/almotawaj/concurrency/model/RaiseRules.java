@@ -17,7 +17,7 @@ public record RaiseRules(Map<Role, BigDecimal> roleRates, BigDecimal yearlyRate)
     }
 
     public BigDecimal roleRate(Role role) {
-        return roleRates.getOrDefault(role, role.getRaiseRate());
+        return roleRates.get(role);
     }
 
     private static Map<Role, BigDecimal> defaultRoleRates() {
