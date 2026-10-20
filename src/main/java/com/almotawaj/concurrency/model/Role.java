@@ -1,17 +1,19 @@
 package com.almotawaj.concurrency.model;
 
+import java.math.BigDecimal;
+
 public enum Role {
-    DIRECTOR(0.05),
-    MANAGER(0.02),
-    EMPLOYEE(0.01);
+    DIRECTOR(new BigDecimal("0.05")),
+    MANAGER(new BigDecimal("0.02")),
+    EMPLOYEE(new BigDecimal("0.01"));
 
-    private final double raiseRate;
+    private final BigDecimal raiseRate;
 
-    Role(double raiseRate) {
+    Role(BigDecimal raiseRate) {
         this.raiseRate = raiseRate;
     }
 
-    public double getRaiseRate() {
+    public BigDecimal getRaiseRate() {
         return raiseRate;
     }
 

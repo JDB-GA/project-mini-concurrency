@@ -1,5 +1,6 @@
 package com.almotawaj.concurrency.model;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public record ProcessingReport(
@@ -7,6 +8,6 @@ public record ProcessingReport(
         int processed,
         int raised,
         int skipped,
-        double totalIncrease,
+        BigDecimal totalIncrease,
         long durationMillis) {
 }

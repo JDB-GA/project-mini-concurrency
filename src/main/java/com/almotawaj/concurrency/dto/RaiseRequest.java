@@ -6,13 +6,15 @@ import com.almotawaj.concurrency.exception.InvalidRaiseRequestException;
 import com.almotawaj.concurrency.model.RaiseRules;
 import com.almotawaj.concurrency.model.Role;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.EnumMap;
 import java.util.Map;
 
-public record RaiseRequest(Double director, Double manager, Double employee, Double yearly) {
+public record RaiseRequest(BigDecimal director, BigDecimal manager, BigDecimal employee, BigDecimal yearly) {
 
     public RaiseRules toRules() {
-        Map<Role, Double> roleRates = new EnumMap<>(Role.class);
+        Map<Role, BigDecimal> roleRates = new EnumMap<>(Role.class);
         roleRates.put(Role.DIRECTOR, toRate(director, Role.DIRECTOR.getRaiseRate()));
         roleRates.put(Role.MANAGER, toRate(manager, Role.MANAGER.getRaiseRate()));
         roleRates.put(Role.EMPLOYEE, toRate(employee, Role.EMPLOYEE.getRaiseRate()));
@@ -20,15 +22,15 @@ public record RaiseRequest(Double director, Double manager, Double employee, Dou
         return new RaiseRules(roleRates, toRate(yearly, RaiseConstants.YEARLY_RATE));
     }
 
-    private static double toRate(Double percent, double fallback) {
+    private static BigDecimal toRate(BigDecimal percent, BigDecimal fallback) {
         if (percent == null) {
             return fallback;
         }
 
-        if (percent < 0 || percent > RaiseConstants.PERCENT) {
+        if (percent.signum() < 0 || percent.compareTo(RaiseConstants.PERCENT) > 0) {
             throw new InvalidRaiseRequestException(ErrorConstants.INVALID_RATE);
         }
 
-        return percent / RaiseConstants.PERCENT;
+        return percent.divide(RaiseConstants.PERCENT, RaiseConstants.RATE_SCALE, RoundingMode.HALF_UP);
     }
 }

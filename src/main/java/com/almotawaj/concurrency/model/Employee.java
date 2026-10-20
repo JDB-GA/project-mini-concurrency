@@ -1,5 +1,9 @@
 package com.almotawaj.concurrency.model;
 
+import com.almotawaj.concurrency.constant.RaiseConstants;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -11,9 +15,9 @@ public class Employee {
     private final Role role;
     private final double completion;
     private final ReentrantLock salaryLock = new ReentrantLock();
-    private double salary;
+    private BigDecimal salary;
 
-    public Employee(int id, String name, double salary, LocalDate joinedDate, Role role, double completion) {
+    public Employee(int id, String name, BigDecimal salary, LocalDate joinedDate, Role role, double completion) {
         this.id = id;
         this.name = name;
         this.salary = salary;
@@ -42,7 +46,7 @@ public class Employee {
         return completion;
     }
 
-    public double getSalary() {
+    public BigDecimal getSalary() {
         salaryLock.lock();
         try {
             return salary;
@@ -51,11 +55,11 @@ public class Employee {
         }
     }
 
-    public SalaryUpdate applyRaise(double rate) {
+    public SalaryUpdate applyRaise(BigDecimal rate) {
         salaryLock.lock();
         try {
-            double before = salary;
-            salary = Math.round(salary * (1 + rate) * 100.0) / 100.0;
+            BigDecimal before = salary;
+            salary = salary.multiply(BigDecimal.ONE.add(rate)).setScale(RaiseConstants.MONEY_SCALE, RoundingMode.HALF_UP);
             return new SalaryUpdate(before, salary);
         } finally {
             salaryLock.unlock();

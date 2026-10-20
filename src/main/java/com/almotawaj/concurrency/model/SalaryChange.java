@@ -1,17 +1,19 @@
 package com.almotawaj.concurrency.model;
 
+import java.math.BigDecimal;
+
 public record SalaryChange(
         int id,
         String name,
         Role role,
         int yearsWorked,
         double completion,
-        double oldSalary,
-        double newSalary,
-        double rate,
+        BigDecimal oldSalary,
+        BigDecimal newSalary,
+        BigDecimal rate,
         String thread) {
 
-    public double increase() {
-        return Math.round((newSalary - oldSalary) * 100.0) / 100.0;
+    public BigDecimal increase() {
+        return newSalary.subtract(oldSalary);
     }
 }

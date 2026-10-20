@@ -5,6 +5,7 @@ import com.almotawaj.concurrency.exception.InvalidEmployeeException;
 import com.almotawaj.concurrency.model.Employee;
 import com.almotawaj.concurrency.model.Role;
 
+import java.math.BigDecimal;
 import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -60,7 +61,7 @@ public final class EmployeeCsvMapper {
             return new Employee(
                     Integer.parseInt(row[ID].trim()),
                     row[NAME].trim(),
-                    Double.parseDouble(row[SALARY].trim()),
+                    new BigDecimal(row[SALARY].trim()),
                     LocalDate.parse(row[JOINED_DATE].trim()),
                     Role.fromCsv(row[ROLE]),
                     completion);
@@ -73,7 +74,7 @@ public final class EmployeeCsvMapper {
         return new String[]{
                 String.valueOf(employee.getId()),
                 employee.getName(),
-                String.valueOf(employee.getSalary()),
+                employee.getSalary().toPlainString(),
                 employee.getJoinedDate().toString(),
                 employee.getRole().toCsv(),
                 String.valueOf(employee.getCompletion())

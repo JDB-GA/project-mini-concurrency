@@ -11,6 +11,7 @@ import com.almotawaj.concurrency.model.SalaryUpdate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -19,7 +20,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.DoubleAdder;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Service
 public class SalaryProcessor {
@@ -41,16 +42,16 @@ public class SalaryProcessor {
         Semaphore permits = new Semaphore(maxConcurrentUpdates);
         AtomicInteger raised = new AtomicInteger();
         AtomicInteger skipped = new AtomicInteger();
-        DoubleAdder totalIncrease = new DoubleAdder();
+        AtomicReference<BigDecimal> totalIncrease = new AtomicReference<>(BigDecimal.ZERO);
         List<SalaryChange> changes = new ArrayList<>(employees.size());
 
         List<Future<?>> tasks = employees.stream()
                 .<Future<?>>map(employee -> executor.submit(() -> {
                     SalaryChange change = processEmployee(employee, rules, permits);
 
-                    if (change.rate() > 0) {
+                    if (change.rate().signum() > 0) {
                         raised.incrementAndGet();
-                        totalIncrease.add(change.increase());
+                        totalIncrease.accumulateAndGet(change.increase(), BigDecimal::add);
                     } else {
                         skipped.incrementAndGet();
                     }
@@ -73,12 +74,12 @@ public class SalaryProcessor {
                 sorted.size(),
                 raised.get(),
                 skipped.get(),
-                Math.round(totalIncrease.sum() * 100.0) / 100.0,
+                totalIncrease.get(),
                 (System.nanoTime() - start) / 1_000_000);
     }
 
     private SalaryChange processEmployee(Employee employee, RaiseRules rules, Semaphore permits) {
-        double rate = calculator.rateFor(employee, rules);
+        BigDecimal rate = calculator.rateFor(employee, rules);
 
         try {
             permits.acquire();

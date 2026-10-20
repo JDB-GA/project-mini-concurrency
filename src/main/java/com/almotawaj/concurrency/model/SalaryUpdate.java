@@ -1,4 +1,6 @@
 package com.almotawaj.concurrency.model;
 
-public record SalaryUpdate(double before, double after) {
+import java.math.BigDecimal;
+
+public record SalaryUpdate(BigDecimal before, BigDecimal after) {
 }

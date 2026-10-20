@@ -9,6 +9,8 @@ import com.almotawaj.concurrency.model.SalaryUpdate;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -27,6 +29,7 @@ class SalaryProcessorTest {
     private static final LocalDate TODAY = LocalDate.of(2026, 10, 19);
     private static final int POOL_SIZE = 8;
     private static final int MAX_CONCURRENT = 2;
+    private static final BigDecimal SALARY = new BigDecimal("1000.00");
 
     private final ExecutorService executor = Executors.newFixedThreadPool(POOL_SIZE);
     private final RaiseCalculator calculator = new RaiseCalculator(
@@ -41,7 +44,7 @@ class SalaryProcessorTest {
     @Test
     void processesEveryEmployeeExactlyOnce() {
         List<Employee> employees = IntStream.rangeClosed(1, 1000)
-                .mapToObj(i -> new Employee(i, "E" + i, 1000.0, TODAY.minusYears(i % 5), Role.values()[i % 3], (i % 10) / 10.0))
+                .mapToObj(i -> new Employee(i, "E" + i, SALARY, TODAY.minusYears(i % 5), Role.values()[i % 3], (i % 10) / 10.0))
                 .toList();
 
         ProcessingReport report = processor.process(employees, RaiseRules.defaults());
@@ -51,19 +54,20 @@ class SalaryProcessorTest {
         assertEquals(employees.stream().filter(e -> e.getCompletion() >= 0.6).count(), report.raised());
         assertEquals(IntStream.rangeClosed(1, 1000).boxed().toList(),
                 report.changes().stream().map(SalaryChange::id).toList());
-        assertEquals(report.changes().stream().mapToDouble(SalaryChange::increase).sum(), report.totalIncrease(), 0.01);
+        assertEquals(report.changes().stream().map(SalaryChange::increase).reduce(BigDecimal.ZERO, BigDecimal::add),
+                report.totalIncrease());
     }
 
     @Test
     void appliesExpectedRaise() {
-        Employee alice = new Employee(1, "Alice", 52000.0, LocalDate.of(2019, 5, 12), Role.EMPLOYEE, 0.8);
+        Employee alice = new Employee(1, "Alice", new BigDecimal("52000.00"), LocalDate.of(2019, 5, 12), Role.EMPLOYEE, 0.8);
 
         SalaryChange change = processor.process(List.of(alice), RaiseRules.defaults()).changes().get(0);
 
-        assertEquals(0.01 + 7 * 0.02, change.rate(), 1e-9);
-        assertEquals(52000.0, change.oldSalary());
-        assertEquals(59800.0, change.newSalary());
-        assertEquals(59800.0, alice.getSalary());
+        assertEquals(new BigDecimal("0.1500"), change.rate());
+        assertEquals(new BigDecimal("52000.00"), change.oldSalary());
+        assertEquals(new BigDecimal("59800.00"), change.newSalary());
+        assertEquals(new BigDecimal("59800.00"), alice.getSalary());
     }
 
     @Test
@@ -93,15 +97,16 @@ class SalaryProcessorTest {
 
     @Test
     void lockPreventsLostUpdatesOnSameEmployee() throws InterruptedException {
-        Employee shared = new Employee(1, "Shared", 1000.0, TODAY, Role.EMPLOYEE, 0.7);
+        Employee shared = new Employee(1, "Shared", SALARY, TODAY, Role.EMPLOYEE, 0.7);
         int raises = 500;
-        double expected = 1000.0;
+        BigDecimal rate = new BigDecimal("0.001");
+        BigDecimal expected = SALARY;
         for (int i = 0; i < raises; i++) {
-            expected = Math.round(expected * 1.001 * 100.0) / 100.0;
+            expected = expected.multiply(BigDecimal.ONE.add(rate)).setScale(2, RoundingMode.HALF_UP);
         }
 
         for (int i = 0; i < raises; i++) {
-            executor.submit(() -> shared.applyRaise(0.001));
+            executor.submit(() -> shared.applyRaise(rate));
         }
         executor.shutdown();
         assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
@@ -115,13 +120,13 @@ class SalaryProcessorTest {
         private final AtomicInteger peak;
 
         SlowEmployee(int id, AtomicInteger active, AtomicInteger peak) {
-            super(id, "Slow" + id, 1000.0, TODAY.minusYears(1), Role.EMPLOYEE, 0.7);
+            super(id, "Slow" + id, SALARY, TODAY.minusYears(1), Role.EMPLOYEE, 0.7);
             this.active = active;
             this.peak = peak;
         }
 
         @Override
-        public SalaryUpdate applyRaise(double rate) {
+        public SalaryUpdate applyRaise(BigDecimal rate) {
             peak.accumulateAndGet(active.incrementAndGet(), Math::max);
             try {
                 Thread.sleep(5);

@@ -6,6 +6,7 @@ import com.almotawaj.concurrency.model.Role;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
@@ -23,7 +24,7 @@ class EmployeeCsvMapperTest {
 
         assertEquals(1, employee.getId());
         assertEquals("Alice", employee.getName());
-        assertEquals(52000.0, employee.getSalary());
+        assertEquals(new BigDecimal("52000.0"), employee.getSalary());
         assertEquals(LocalDate.of(2019, 5, 12), employee.getJoinedDate());
         assertEquals(Role.EMPLOYEE, employee.getRole());
         assertEquals(0.8, employee.getCompletion());
