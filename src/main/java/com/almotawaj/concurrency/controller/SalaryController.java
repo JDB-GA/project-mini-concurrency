@@ -1,8 +1,8 @@
 package com.almotawaj.concurrency.controller;
 
+import com.almotawaj.concurrency.dto.EmployeeResponse;
 import com.almotawaj.concurrency.dto.RaiseRequest;
 import com.almotawaj.concurrency.model.ApplyResult;
-import com.almotawaj.concurrency.model.Employee;
 import com.almotawaj.concurrency.model.ProcessingReport;
 import com.almotawaj.concurrency.service.EmployeeService;
 import org.springframework.http.ResponseEntity;
@@ -25,8 +25,8 @@ public class SalaryController {
     }
 
     @GetMapping("/employees")
-    public ResponseEntity<List<Employee>> getEmployees() {
-        return ResponseEntity.ok(employeeService.loadEmployees());
+    public ResponseEntity<List<EmployeeResponse>> getEmployees() {
+        return ResponseEntity.ok(employeeService.loadEmployees().stream().map(EmployeeResponse::from).toList());
     }
 
     @GetMapping("/salaries/preview")
