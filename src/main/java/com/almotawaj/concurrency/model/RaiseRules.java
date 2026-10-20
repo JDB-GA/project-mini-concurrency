@@ -3,11 +3,8 @@ package com.almotawaj.concurrency.model;
 import com.almotawaj.concurrency.constant.RaiseConstants;
 
 import java.math.BigDecimal;
-import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public record RaiseRules(Map<Role, BigDecimal> roleRates, BigDecimal yearlyRate) {
 
@@ -24,8 +21,10 @@ public record RaiseRules(Map<Role, BigDecimal> roleRates, BigDecimal yearlyRate)
     }
 
     private static Map<Role, BigDecimal> defaultRoleRates() {
-        return Arrays.stream(Role.values())
-                .collect(Collectors.toMap(Function.identity(), Role::getRaiseRate,
-                        (a, b) -> a, () -> new EnumMap<>(Role.class)));
+        Map<Role, BigDecimal> rates = new EnumMap<>(Role.class);
+        for (Role role : Role.values()) {
+            rates.put(role, role.getRaiseRate());
+        }
+        return rates;
     }
 }
