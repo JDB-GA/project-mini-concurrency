@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Salary Processor</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main>
+    <header>
+        <h1>Concurrent Salary Processor</h1>
+        <p class="subtitle">Calculates every employee's raise in parallel using a thread pool.</p>
+    </header>
+
+    <section class="panel">
+        <h2>Raise percentages</h2>
+        <form id="rates">
+            <label>Director %
+                <input type="number" name="director" value="5" min="0" max="100" step="0.1">
+            </label>
+            <label>Manager %
+                <input type="number" name="manager" value="2" min="0" max="100" step="0.1">
+            </label>
+            <label>Employee %
+                <input type="number" name="employee" value="1" min="0" max="100" step="0.1">
+            </label>
+            <label>Per year worked %
+                <input type="number" name="yearly" value="2" min="0" max="100" step="0.1">
+            </label>
+        </form>
+        <p class="rules">Below 60% completion: no raise. Above 80% completion: role raise × 1.5. Year raise applies after one full year.</p>
+        <div class="actions">
+            <button id="preview" type="button">Show before &amp; after</button>
+            <button id="apply" type="button" class="secondary">Apply &amp; save CSV</button>
+            <button id="reset" type="button" class="ghost">Reset</button>
+        </div>
+        <p id="message" class="message" role="status"></p>
+    </section>
+
+    <section id="summary" class="summary" hidden>
+        <div class="stat"><span class="label">Processed</span><span id="processed" class="value"></span></div>
+        <div class="stat"><span class="label">Raised</span><span id="raised" class="value"></span></div>
+        <div class="stat"><span class="label">No raise</span><span id="skipped" class="value"></span></div>
+        <div class="stat"><span class="label">Total increase</span><span id="total" class="value"></span></div>
+        <div class="stat"><span class="label">Time</span><span id="duration" class="value"></span></div>
+    </section>
+
+    <section class="panel table-panel">
+        <table>
+            <thead id="table-head"></thead>
+            <tbody id="table-body"></tbody>
+        </table>
+    </section>
+</main>
+<script src="app.js"></script>
+</body>
+</html>
