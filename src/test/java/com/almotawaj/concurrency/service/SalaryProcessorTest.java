@@ -5,7 +5,6 @@ import com.almotawaj.concurrency.model.ProcessingReport;
 import com.almotawaj.concurrency.model.RaiseRules;
 import com.almotawaj.concurrency.model.Role;
 import com.almotawaj.concurrency.model.SalaryChange;
-import com.almotawaj.concurrency.model.SalaryUpdate;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -73,7 +72,7 @@ class SalaryProcessorTest {
     @Test
     void usesMultipleWorkerThreads() {
         List<Employee> employees = IntStream.rangeClosed(1, 200)
-                .<Employee>mapToObj(i -> new SlowEmployee(i, new AtomicInteger(), new AtomicInteger()))
+                .<Employee>mapToObj(i -> new SlowEmployee(i, TODAY.minusYears(1), new AtomicInteger(), new AtomicInteger()))
                 .toList();
 
         ProcessingReport report = processor.process(employees, RaiseRules.defaults());
@@ -86,7 +85,7 @@ class SalaryProcessorTest {
         AtomicInteger active = new AtomicInteger();
         AtomicInteger peak = new AtomicInteger();
         List<Employee> employees = IntStream.rangeClosed(1, 40)
-                .<Employee>mapToObj(i -> new SlowEmployee(i, active, peak))
+                .<Employee>mapToObj(i -> new SlowEmployee(i, TODAY.minusYears(1), active, peak))
                 .toList();
 
         processor.process(employees, RaiseRules.defaults());
@@ -112,29 +111,5 @@ class SalaryProcessorTest {
         assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
 
         assertEquals(expected, shared.getSalary());
-    }
-
-    private static class SlowEmployee extends Employee {
-
-        private final AtomicInteger active;
-        private final AtomicInteger peak;
-
-        SlowEmployee(int id, AtomicInteger active, AtomicInteger peak) {
-            super(id, "Slow" + id, SALARY, TODAY.minusYears(1), Role.EMPLOYEE, 0.7);
-            this.active = active;
-            this.peak = peak;
-        }
-
-        @Override
-        public SalaryUpdate applyRaise(BigDecimal rate) {
-            peak.accumulateAndGet(active.incrementAndGet(), Math::max);
-            try {
-                Thread.sleep(5);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-            active.decrementAndGet();
-            return super.applyRaise(rate);
-        }
     }
 }
