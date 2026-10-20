@@ -18,19 +18,22 @@ Boundary decisions:
 
 ## Using the web page
 
-- The table first shows the employees exactly as they are in the CSV.
-- **Show before & after** calculates every raise and shows the old salary, new salary, raise percentage, increase and the worker thread that processed each employee. Employees without a raise are greyed out. The CSV file is not changed.
-- **Apply & save CSV** does the same calculation and writes the updated salaries to `output/<input-name>-updated.csv`. The original file is never modified.
+- The table first shows the current employee data. The badge in the corner says whether that is the **original data** or the **updated data**.
+- **Show before & after** calculates every raise and shows the old salary, new salary, raise percentage, increase and the worker thread that processed each employee. Employees without a raise are greyed out. Nothing is saved.
+- **Apply & save CSV** does the same calculation and saves the result to `output/<input-name>-updated.csv`, which becomes the current data. Applying again stacks another round of raises on top.
 - The four percentage inputs change the role and per-year raises for both buttons. Values must be between 0 and 100.
-- **Reset** restores the default percentages and reloads the original data.
+- **Reset to original data** deletes the updated file, restores the default percentages and reloads the original data, so you can simulate again from the start.
+- The original input file is never modified.
 
 ## REST API
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/api/employees` | Employees as read from the CSV |
-| `GET` | `/api/salaries/preview` | Calculates raises and returns a report without writing anything |
-| `POST` | `/api/salaries/apply` | Calculates raises, writes the output CSV and returns the report with the output path |
+| `GET` | `/api/employees` | The current employee data |
+| `GET` | `/api/status` | Which file is current: `{"activeFile": "...", "original": true}` |
+| `GET` | `/api/salaries/preview` | Calculates raises on the current data and returns a report without saving |
+| `POST` | `/api/salaries/apply` | Calculates raises on the current data, saves the updated CSV and returns the report with its path |
+| `POST` | `/api/salaries/reset` | Deletes the updated CSV so the original data is current again; returns the status |
 
 Both salary endpoints accept optional query parameters in percent: `director`, `manager`, `employee`, `yearly`. Missing parameters fall back to the default rules.
 

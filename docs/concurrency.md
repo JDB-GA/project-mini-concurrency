@@ -11,6 +11,7 @@
 | `AtomicInteger` | `ProcessingStats` | Counts raised and skipped employees from many threads without locking. |
 | `AtomicReference<BigDecimal>` | `ProcessingStats` | Sums the total increase with `accumulateAndGet`, a lock-free compare-and-set loop. |
 | `synchronized` block | `ProcessingStats` | Guards the shared `ArrayList` of results, which is not thread-safe by itself. |
+| `ReentrantReadWriteLock` | `EmployeeService` | Guards the current data file. Any number of requests can read it at once, but apply and reset take the write lock, so a reader never sees a half-written file and two applies can never overwrite each other. |
 
 ## Supporting decisions
 

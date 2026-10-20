@@ -7,13 +7,13 @@ The application is split into layers that each do one thing:
 1. **Reading**: `CsvLines` reads the file and skips the header; `EmployeeCsvMapper` validates each row and builds `Employee` objects, reporting the exact line of any bad row.
 2. **Calculating**: `RaiseCalculator` holds the business rules with no threading concerns, so the rules can be tested on their own with a fixed clock.
 3. **Processing**: `SalaryProcessor` hands each employee to a fixed thread pool as a `SalaryTask`. A semaphore limits simultaneous updates, a per-employee lock protects each salary, and `ProcessingStats` collects the results with atomics and a `synchronized` block.
-4. **Delivering**: `EmployeeService` either previews the result or writes a new CSV, leaving the input untouched. `SalaryController` exposes this over REST, and the web page uses that API.
+4. **Delivering**: `EmployeeService` either previews the result or saves it as the current data, which can be reset to the untouched original. `SalaryController` exposes this over REST, and the web page uses that API.
 
 Raise percentages are passed in as `RaiseRules` instead of being hard-coded, which lets the web page change them per request.
 
 ## Testing
 
-`./mvnw test` runs 29 tests:
+`./mvnw test` runs 35 tests:
 
 | Test class | Covers |
 |---|---|
@@ -21,6 +21,8 @@ Raise percentages are passed in as `RaiseRules` instead of being hard-coded, whi
 | `RaiseCalculatorTest` | Every rule and boundary (exactly 60%, exactly 80%, partial years, bonus, custom rates, future join dates) against a fixed date |
 | `SalaryProcessorTest` | 1,000 employees processed exactly once with correct totals, work spread over several threads, the semaphore never exceeding its permits, and 500 concurrent raises on one employee with no lost update |
 | `SalaryControllerTest` | All endpoints, the output file, custom percentages and every error status |
+| `DataResetControllerTest` | Applied data becomes current, a second apply stacks on the first, preview saves nothing, and reset restores the original without touching the input file |
+| `EmployeeServiceTest` | Five applies fired at once all stack, proving the write lock serializes them |
 | `ConcurrencyApplicationTests` | The Spring context starts |
 
 ## Outcomes

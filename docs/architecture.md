@@ -7,7 +7,7 @@ src/main/java/com/almotawaj/concurrency
 ├── config        ExecutorConfig, TimeConfig
 ├── constant      ErrorConstants, FileConstants, ProcessingConstants, RaiseConstants
 ├── controller    SalaryController
-├── dto           RaiseRequest, EmployeeResponse, ErrorResponse
+├── dto           RaiseRequest, EmployeeResponse, DataStatus, ErrorResponse
 ├── exception     GlobalExceptionHandler and the custom exceptions
 ├── model         Employee, Role, RaiseRules, SalaryUpdate, SalaryChange, ProcessingReport, ApplyResult
 ├── service       EmployeeService, RaiseCalculator, SalaryProcessor, SalaryTask, ProcessingStats
@@ -37,6 +37,7 @@ Money and rates use `BigDecimal`. Salaries are rounded to 2 decimal places and r
   - `getLines(path)` returns the rows after the header, split into columns.
   - `writeLines(path, header, rows)` writes a header and rows, creating folders as needed.
   - `updateCell(path, row, col, value)` changes one cell in place; row 0 is the first data row.
+  - `deleteIfExists(path)` deletes a file if it exists.
   - `listFiles(dir)` lists the `.csv` files in a folder.
 - **`EmployeeCsvMapper`**: converts between CSV rows and `Employee` objects.
   - `toEmployees(rows)` maps every row and skips blank lines.
@@ -52,17 +53,18 @@ Money and rates use `BigDecimal`. Salaries are rounded to 2 decimal places and r
 - **`SalaryProcessor`**: submits one `SalaryTask` per employee to the thread pool, waits for all of them and returns the report.
 - **`SalaryTask`**: the work for one employee: calculate the rate, update the salary while holding a semaphore permit, record the result.
 - **`ProcessingStats`**: thread-safe collector for results, counters and the total increase.
-- **`EmployeeService`**: ties file access and processing together.
-  - `loadEmployees()` reads the configured input CSV.
-  - `preview(rules)` processes a fresh copy without writing anything.
-  - `apply(rules)` processes the employees and writes `output/<input-name>-updated.csv`.
+- **`EmployeeService`**: ties file access and processing together. The current data is the updated file if it exists, otherwise the original input file. A `ReentrantReadWriteLock` guards it.
+  - `loadEmployees()` and `status()` read the current data under the read lock.
+  - `preview(rules)` processes a fresh copy of the current data without saving.
+  - `apply(rules)` processes the current data and saves `output/<input-name>-updated.csv` under the write lock.
+  - `reset()` deletes the updated file under the write lock, making the original data current again.
 
 ## web
 
 - **`SalaryController`**: the three REST endpoints.
 - **`RaiseRequest`**: binds and validates the optional percentage parameters and converts them into `RaiseRules`.
 - **`EmployeeResponse`**: the JSON shape of an employee, so the API does not expose the internal model.
-- **`GlobalExceptionHandler`**: turns every exception into a JSON `ErrorResponse` with the right status.
+- **`DataStatus`**: which file is current and whether it is the original.- **`GlobalExceptionHandler`**: turns every exception into a JSON `ErrorResponse` with the right status.
 
 ## frontend
 
