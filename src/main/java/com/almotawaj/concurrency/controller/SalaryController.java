@@ -1,5 +1,6 @@
 package com.almotawaj.concurrency.controller;
 
+import com.almotawaj.concurrency.dto.DataStatus;
 import com.almotawaj.concurrency.dto.EmployeeResponse;
 import com.almotawaj.concurrency.dto.RaiseRequest;
 import com.almotawaj.concurrency.model.ApplyResult;
@@ -29,6 +30,11 @@ public class SalaryController {
         return ResponseEntity.ok(employeeService.loadEmployees().stream().map(EmployeeResponse::from).toList());
     }
 
+    @GetMapping("/status")
+    public ResponseEntity<DataStatus> getStatus() {
+        return ResponseEntity.ok(employeeService.status());
+    }
+
     @GetMapping("/salaries/preview")
     public ResponseEntity<ProcessingReport> preview(@ModelAttribute RaiseRequest request) {
         return ResponseEntity.ok(employeeService.preview(request.toRules()));
@@ -37,5 +43,10 @@ public class SalaryController {
     @PostMapping("/salaries/apply")
     public ResponseEntity<ApplyResult> apply(@ModelAttribute RaiseRequest request) {
         return ResponseEntity.ok(employeeService.apply(request.toRules()));
+    }
+
+    @PostMapping("/salaries/reset")
+    public ResponseEntity<DataStatus> reset() {
+        return ResponseEntity.ok(employeeService.reset());
     }
 }
