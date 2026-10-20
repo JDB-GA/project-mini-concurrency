@@ -1,5 +1,6 @@
 package com.almotawaj.concurrency.controller;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +32,11 @@ class SalaryControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @BeforeEach
+    void resetData() throws IOException {
+        Files.deleteIfExists(outputFile());
+    }
+
     @DynamicPropertySource
     static void outputProperties(DynamicPropertyRegistry registry) {
         registry.add("employees.output-dir", outputDir::toString);
@@ -47,8 +53,6 @@ class SalaryControllerTest {
 
     @Test
     void previewsRaisesWithoutWritingFile() throws Exception {
-        Files.deleteIfExists(outputFile());
-
         mockMvc.perform(get("/api/salaries/preview"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.processed").value(30))
