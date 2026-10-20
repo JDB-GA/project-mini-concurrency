@@ -18,4 +18,8 @@ public enum Role {
     public static Role fromCsv(String value) {
         return Role.valueOf(value.trim().toUpperCase());
     }
+
+    public String toCsv() {
+        return name().charAt(0) + name().substring(1).toLowerCase();
+    }
 }
