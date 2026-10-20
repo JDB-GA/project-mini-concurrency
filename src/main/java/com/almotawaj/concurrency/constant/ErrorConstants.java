@@ -8,6 +8,7 @@ public final class ErrorConstants {
     public static final String INVALID_EMPLOYEE_ROW = "Invalid employee data at line %d";
     public static final String PROCESSING_INTERRUPTED = "Salary processing was interrupted";
     public static final String PROCESSING_FAILED = "Salary processing failed";
+    public static final String INVALID_RATE = "Raise percentages must be between 0 and 100";
 
     private ErrorConstants() {
     }

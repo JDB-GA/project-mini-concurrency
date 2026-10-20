@@ -7,6 +7,7 @@ public final class RaiseConstants {
     public static final double BONUS_COMPLETION = 0.8;
     public static final double BONUS_MULTIPLIER = 1.5;
     public static final double NO_RAISE = 0.0;
+    public static final double PERCENT = 100.0;
 
     private RaiseConstants() {
     }
