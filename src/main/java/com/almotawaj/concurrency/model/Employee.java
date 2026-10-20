@@ -51,11 +51,12 @@ public class Employee {
         }
     }
 
-    public double applyRaise(double rate) {
+    public SalaryUpdate applyRaise(double rate) {
         salaryLock.lock();
         try {
+            double before = salary;
             salary = Math.round(salary * (1 + rate) * 100.0) / 100.0;
-            return salary;
+            return new SalaryUpdate(before, salary);
         } finally {
             salaryLock.unlock();
         }
